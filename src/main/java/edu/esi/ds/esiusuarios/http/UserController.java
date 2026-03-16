@@ -22,17 +22,22 @@ public class UserController {
     @Autowired
     private UserService service;
 
-    @PostMapping("/login")
-    public String login(@RequestBody Map<String, String> credentials) {
+    @PostMapping("/registrar")
+    public String registrar(@RequestBody Map<String, String> credentials) {
         JSONObject json = new JSONObject(credentials);
-        String nombre = json.optString("nombre");
-        String contraseña = json.optString("contraseña");
+        String email = json.optString("email");
+        String pwd1 = json.optString("pwd1");
+        String pwd2 = json.optString("pwd2");
 
-        if (nombre.isEmpty() || contraseña.isEmpty()) {
+        if (email.isEmpty() || pwd1.isEmpty() || pwd2.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
         }
 
-        String result = this.service.login(nombre, contraseña);
+        if (!pwd1.equals(pwd2)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Passwords do not match");
+        }
+
+        String result = this.service.registrar(email, pwd1);
         if (result == null) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
         }
