@@ -1,17 +1,48 @@
 package edu.esi.ds.esiusuarios.model;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+
+@Entity
+@Table(name = "Usuarios")
 public class User {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(length = 32, nullable = false)
     private String nombre;
+
+    @Column(length = 64, nullable = false)
     private String apellidos;
+
+    @Column(length = 256, nullable = false)
     private String contraseña;
+
+    @Column(length = 256, nullable = false, unique = true)
     private String email;
+
+    public User() {
+    }
 
     public User(String nombre, String apellidos, String email, String contraseña) {
         this.nombre = nombre;
         this.apellidos = apellidos;
         this.email = email;
         this.contraseña = contraseña;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public String getNombre() {

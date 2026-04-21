@@ -1,20 +1,23 @@
 package edu.esi.ds.esiusuarios.services;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import edu.esi.ds.esiusuarios.auxiliares.Manager;
+import edu.esi.ds.esiusuarios.dao.UserDAO;
 import edu.esi.ds.esiusuarios.model.User;
 
 @Service
 public class UserService {
 
-    private List<User> users = new ArrayList<>();
+    @Autowired
+    private UserDAO userDAO;
+
     private BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
     
     @Autowired
@@ -28,28 +31,32 @@ public class UserService {
         validatorService.validateApellidos(apellidos);
         validatorService.validateEmail(email);
         validatorService.validatePassword(contraseña);
+
+        if (userDAO.findByEmail(email).isPresent()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "El email ya está registrado");
+        }
         
         String encodedPassword = encoder.encode(contraseña);
 
         User newUser = new User(nombre, apellidos, email, encodedPassword);
-        this.users.add(newUser);
+        userDAO.save(newUser);
 
         Manager.getInstance().getEmailService().sendEmail(email, 
             "asunto", "Bienvenido a esiusuarios,!",
             "texto", "Bienvenido al sistema."
         );
 
-        return String.valueOf(users.size());
+        return String.valueOf(newUser.getId());
     }
 
-    //TODO cambiar a http status codes
     public String login(String email, String contraseña) {
-        for (User user : users) {
-            if (user.getEmail().equals(email) && encoder.matches(contraseña, user.getContraseña())) {
-                return "Login successful";
-            }
+        Optional<User> optionalUser = userDAO.findByEmail(email);
+        
+        if (optionalUser.isPresent() && encoder.matches(contraseña, optionalUser.get().getContraseña())) {
+            return "Login successful";
         }
-        return "Login failed";
+        
+        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Credenciales incorrectas");
     }
 
 }
