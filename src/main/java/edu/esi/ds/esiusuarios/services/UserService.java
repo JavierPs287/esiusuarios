@@ -6,20 +6,24 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+
 import edu.esi.ds.esiusuarios.auxiliares.Manager;
 import edu.esi.ds.esiusuarios.model.User;
 
 @Service
 public class UserService {
 
-    private List<User> users;
+    private List<User> users = new ArrayList<>();
 
     public UserService() {
-        this.users = new ArrayList<>();
     }
 
     public String registrar(String nombre, String apellidos, String email, String contraseña) {
-        User newUser = new User(nombre, apellidos, email, contraseña);
+        BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+        String encodedPassword = encoder.encode(contraseña);
+
+        User newUser = new User(nombre, apellidos, email, encodedPassword);
         this.users.add(newUser);
 
         Manager.getInstance().getEmailService().sendEmail(email, 
