@@ -25,11 +25,13 @@ public class UserController {
     @PostMapping("/registrar")
     public String registrar(@RequestBody Map<String, String> credentials) {
         JSONObject json = new JSONObject(credentials);
+        String nombre = json.optString("nombre");
+        String apellidos = json.optString("apellidos");
         String email = json.optString("email");
         String pwd1 = json.optString("pwd1");
         String pwd2 = json.optString("pwd2");
 
-        if (email.isEmpty() || pwd1.isEmpty() || pwd2.isEmpty()) {
+        if (nombre.isEmpty() || apellidos.isEmpty() || email.isEmpty() || pwd1.isEmpty() || pwd2.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
         }
 
@@ -37,9 +39,9 @@ public class UserController {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Passwords do not match");
         }
 
-        String result = this.service.registrar(email, pwd1);
+        String result = this.service.registrar(nombre, apellidos, email, pwd1);
         if (result == null) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Registration failed");
         }
         return result;
     }

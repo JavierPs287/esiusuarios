@@ -1,5 +1,6 @@
 package edu.esi.ds.esiusuarios.services;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,40 +15,28 @@ public class UserService {
     private List<User> users;
 
     public UserService() {
-        this.users = List.of(new User("Pepe","pepe123", "1234"), 
-                            new User("María","maria456", "5678"));
-
+        this.users = new ArrayList<>();
     }
 
-    public String registrar(String email, String contraseña) {
-        User newUser = new User(email, contraseña, String.valueOf(users.size() + 1));
+    public String registrar(String nombre, String apellidos, String email, String contraseña) {
+        User newUser = new User(nombre, apellidos, email, contraseña);
         this.users.add(newUser);
 
         Manager.getInstance().getEmailService().sendEmail(email, 
             "asunto", "Bienvenido a esiusuarios,!",
-            "texto", "Bienvenido al sistema, confirma tu usuario en  http://localhost:8080/users/confirmar?token=" + newUser.getToken()
+            "texto", "Bienvenido al sistema."
         );
 
         return String.valueOf(users.size());
     }
 
-    public String login(String nombre, String contraseña) {
+    public String login(String email, String contraseña) {
         for (User user : users) {
-            if (user.getNombre().equals(nombre) && user.getContraseña().equals(contraseña)) {
+            if (user.getEmail().equals(email) && user.getContraseña().equals(contraseña)) {
                 return "Login successful";
             }
         }
         return null;
-    }
-
-    public String checkToken(String token) {
-        for (User user : users) {
-            if (user.getToken().equals(token)) {
-                return user.getNombre();
-            }
-        }
-        return null;
-        
     }
 
 }

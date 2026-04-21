@@ -17,15 +17,15 @@ public class ExternalController {
     @Autowired
     private UserService service;
 
-    @GetMapping("/checktoken/{token}")
-    public String checkToken(@PathVariable String token) {
-        if(token == null || token.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Se necesita token");
-        }
-        String username = this.service.checkToken(token);
-        if (username == null) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Token no válido");
-        }
-        return username;
-    }
+    // @GetMapping("/checktoken/{token}")
+    // public String checkToken(@PathVariable String token) {
+    //     if(token == null || token.isEmpty()) {
+    //         throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Se necesita token");
+    //     }
+    //     String username = this.service.checkToken(token);
+    //     if (username == null) {
+    //         throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Token no válido");
+    //     }
+    //     return username;
+    // }
 }
