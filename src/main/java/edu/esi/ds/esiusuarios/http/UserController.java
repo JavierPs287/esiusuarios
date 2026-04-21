@@ -46,4 +46,17 @@ public class UserController {
         return result;
     }
 
+    @PostMapping("/login")
+    public Integer login(@RequestBody Map<String, String> credentials) {
+        JSONObject json = new JSONObject(credentials);
+        String email = json.optString("email");
+        String pwd = json.optString("pwd");
+
+        if (email.isEmpty() || pwd.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
+        }
+
+        return this.service.login(email, pwd);
+    }
+
 }

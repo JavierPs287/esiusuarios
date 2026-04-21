@@ -30,13 +30,13 @@ public class UserService {
         return String.valueOf(users.size());
     }
 
-    public String login(String email, String contraseña) {
+    public Integer login(String email, String contraseña) {
         for (User user : users) {
             if (user.getEmail().equals(email) && user.getContraseña().equals(contraseña)) {
-                return "Login successful";
+                return 1;
             }
         }
-        return null;
+        return 0;
     }
 
 }
