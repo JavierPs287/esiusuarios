@@ -16,11 +16,16 @@ public class UserService {
 
     private List<User> users = new ArrayList<>();
     private BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+    
+    @Autowired
+    private ValidatorService validatorService;
 
     public UserService() {
     }
 
     public String registrar(String nombre, String apellidos, String email, String contraseña) {
+        validatorService.validatePassword(contraseña);
+        
         String encodedPassword = encoder.encode(contraseña);
 
         User newUser = new User(nombre, apellidos, email, encodedPassword);
