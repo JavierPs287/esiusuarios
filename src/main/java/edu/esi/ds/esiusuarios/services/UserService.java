@@ -40,7 +40,7 @@ public class UserService {
                 return "Login successful";
             }
         }
-        return null;
+        return "Login failed";
     }
 
 }
