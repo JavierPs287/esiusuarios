@@ -15,12 +15,12 @@ import edu.esi.ds.esiusuarios.model.User;
 public class UserService {
 
     private List<User> users = new ArrayList<>();
+    private BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
 
     public UserService() {
     }
 
     public String registrar(String nombre, String apellidos, String email, String contraseña) {
-        BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
         String encodedPassword = encoder.encode(contraseña);
 
         User newUser = new User(nombre, apellidos, email, encodedPassword);
@@ -36,7 +36,7 @@ public class UserService {
 
     public String login(String email, String contraseña) {
         for (User user : users) {
-            if (user.getEmail().equals(email) && user.getContraseña().equals(contraseña)) {
+            if (user.getEmail().equals(email) && encoder.matches(contraseña, user.getContraseña())) {
                 return "Login successful";
             }
         }
