@@ -24,6 +24,9 @@ public class UserService {
     }
 
     public String registrar(String nombre, String apellidos, String email, String contraseña) {
+        validatorService.validateNombre(nombre);
+        validatorService.validateApellidos(apellidos);
+        validatorService.validateEmail(email);
         validatorService.validatePassword(contraseña);
         
         String encodedPassword = encoder.encode(contraseña);
@@ -39,6 +42,7 @@ public class UserService {
         return String.valueOf(users.size());
     }
 
+    //TODO cambiar a http status codes
     public String login(String email, String contraseña) {
         for (User user : users) {
             if (user.getEmail().equals(email) && encoder.matches(contraseña, user.getContraseña())) {
