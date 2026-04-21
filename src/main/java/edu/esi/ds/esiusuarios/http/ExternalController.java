@@ -17,6 +17,8 @@ public class ExternalController {
     @Autowired
     private UserService service;
 
+    //TODO Aqui iria el endpoint para verificar la sesión
+
     // @GetMapping("/checktoken/{token}")
     // public String checkToken(@PathVariable String token) {
     //     if(token == null || token.isEmpty()) {
