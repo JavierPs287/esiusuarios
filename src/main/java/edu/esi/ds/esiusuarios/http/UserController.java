@@ -32,16 +32,19 @@ public class UserController {
         String pwd2 = json.optString("pwd2");
 
         if (nombre.isEmpty() || apellidos.isEmpty() || email.isEmpty() || pwd1.isEmpty() || pwd2.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
+            System.err.println("Intento de registro fallido: Faltan credenciales.");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Faltan campos obligatorios");
         }
 
         if (!pwd1.equals(pwd2)) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Passwords do not match");
+            System.err.println("Intento de registro fallido: Las contraseñas no coinciden para " + email);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Las contraseñas no coinciden");
         }
 
         String result = this.service.registrar(nombre, apellidos, email, pwd1);
         if (result == null) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Registration failed");
+            System.err.println("Intento de registro fallido: Fallo desconocido para " + email);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error en el registro");
         }
         return result;
     }
@@ -53,7 +56,8 @@ public class UserController {
         String pwd = json.optString("pwd");
 
         if (email.isEmpty() || pwd.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
+            System.err.println("Intento de login fallido: Faltan credenciales.");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error en el inicio de sesión");
         }
 
         String result = this.service.login(email, pwd);

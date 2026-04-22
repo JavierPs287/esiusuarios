@@ -33,13 +33,16 @@ public class UserService {
         validatorService.validatePassword(contraseña);
 
         if (userDAO.findByEmail(email).isPresent()) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "El email ya está registrado");
+            System.err.println("Intento de registro fallido: El email ya está registrado - " + email);
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Error en el registro");
         }
         
         String encodedPassword = encoder.encode(contraseña);
 
         User newUser = new User(nombre, apellidos, email, encodedPassword);
         userDAO.save(newUser);
+
+        System.out.println("Registro exitoso para el email " + email);
 
         Manager.getInstance().getEmailService().sendEmail(email, 
             "asunto", "Bienvenido a esiusuarios,!",
@@ -52,11 +55,18 @@ public class UserService {
     public String login(String email, String contraseña) {
         Optional<User> optionalUser = userDAO.findByEmail(email);
         
-        if (optionalUser.isPresent() && encoder.matches(contraseña, optionalUser.get().getContraseña())) {
-            return "Login successful";
+        if (optionalUser.isEmpty()) {
+            System.err.println("Intento de login fallido: Usuario no encontrado para el email " + email);
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Credenciales incorrectas o ha ocurrido un error");
         }
         
-        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Credenciales incorrectas");
+        if (!encoder.matches(contraseña, optionalUser.get().getContraseña())) {
+            System.err.println("Intento de login fallido: Contraseña incorrecta para el email " + email);
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Credenciales incorrectas o ha ocurrido un error");
+        }
+        
+        System.out.println("Intento de login exitoso para el email " + email);
+        return "Login successful";
     }
 
 }
