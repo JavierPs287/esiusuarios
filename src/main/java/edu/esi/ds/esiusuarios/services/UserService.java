@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
-import edu.esi.ds.esiusuarios.auxiliares.Manager;
+import jakarta.mail.MessagingException;
 import edu.esi.ds.esiusuarios.dao.UserDAO;
 import edu.esi.ds.esiusuarios.model.User;
 
@@ -22,6 +22,9 @@ public class UserService {
     
     @Autowired
     private ValidatorService validatorService;
+
+    @Autowired
+    private GmailEmailService gmailEmailService;
 
     public UserService() {
     }
@@ -44,10 +47,11 @@ public class UserService {
 
         System.out.println("Registro exitoso para el email " + email);
 
-        Manager.getInstance().getEmailService().sendEmail(email, 
-            "asunto", "Bienvenido a esiusuarios,!",
-            "texto", "Bienvenido al sistema."
-        );
+        try {
+            gmailEmailService.sendWelcomeEmail(email, nombre);
+        } catch (MessagingException e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se ha podido enviar el email de bienvenida", e);
+        }
 
         return String.valueOf(newUser.getId());
     }
