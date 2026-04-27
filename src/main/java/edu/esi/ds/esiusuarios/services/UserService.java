@@ -1,6 +1,7 @@
 package edu.esi.ds.esiusuarios.services;
 
 import java.util.Optional;
+import java.time.LocalDateTime;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -10,13 +11,18 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import jakarta.mail.MessagingException;
 import edu.esi.ds.esiusuarios.dao.UserDAO;
+import edu.esi.ds.esiusuarios.dao.UserSessionDAO;
 import edu.esi.ds.esiusuarios.model.User;
+import edu.esi.ds.esiusuarios.model.UserSession;
 
 @Service
 public class UserService {
 
     @Autowired
     private UserDAO userDAO;
+
+    @Autowired
+    private UserSessionDAO userSessionDAO;
 
     private BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
     
@@ -56,7 +62,7 @@ public class UserService {
         return String.valueOf(newUser.getId());
     }
 
-    public String login(String email, String contraseña) {
+    public String login(String email, String contraseña, String sessionId) {
         Optional<User> optionalUser = userDAO.findByEmail(email);
         
         if (optionalUser.isEmpty()) {
@@ -68,6 +74,12 @@ public class UserService {
             System.err.println("Intento de login fallido: Contraseña incorrecta para el email " + email);
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Credenciales incorrectas o ha ocurrido un error");
         }
+        
+        User user = optionalUser.get();
+        LocalDateTime expirationTime = LocalDateTime.now().plusMinutes(5);
+        UserSession session = new UserSession(encoder.encode(sessionId), user.getId().intValue(), expirationTime);
+        userSessionDAO.save(session);
+        System.out.println("Token user session para el usuario "+ user.getId());
         
         System.out.println("Intento de login exitoso para el email " + email);
         return "Login successful";
