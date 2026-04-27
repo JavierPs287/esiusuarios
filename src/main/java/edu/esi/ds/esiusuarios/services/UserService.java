@@ -77,7 +77,7 @@ public class UserService {
         
         User user = optionalUser.get();
         LocalDateTime expirationTime = LocalDateTime.now().plusMinutes(5);
-        UserSession session = new UserSession(encoder.encode(sessionId), user.getId().intValue(), expirationTime);
+        UserSession session = new UserSession(sessionId, user.getId().intValue(), expirationTime);
         userSessionDAO.save(session);
         System.out.println("Token user session para el usuario "+ user.getId());
         
