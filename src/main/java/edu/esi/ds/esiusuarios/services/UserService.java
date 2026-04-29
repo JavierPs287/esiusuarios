@@ -2,6 +2,7 @@ package edu.esi.ds.esiusuarios.services;
 
 import java.util.Optional;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -12,6 +13,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import jakarta.mail.MessagingException;
 import edu.esi.ds.esiusuarios.dao.UserDAO;
 import edu.esi.ds.esiusuarios.dao.UserSessionDAO;
+import edu.esi.ds.esiusuarios.http.dto.LoginResponse;
 import edu.esi.ds.esiusuarios.model.User;
 import edu.esi.ds.esiusuarios.model.UserSession;
 
@@ -62,7 +64,7 @@ public class UserService {
         return String.valueOf(newUser.getId());
     }
 
-    public String login(String email, String contraseña, String sessionId) {
+    public LoginResponse login(String email, String contraseña) {
         Optional<User> optionalUser = userDAO.findByEmail(email);
         
         if (optionalUser.isEmpty()) {
@@ -76,13 +78,25 @@ public class UserService {
         }
         
         User user = optionalUser.get();
-        LocalDateTime expirationTime = LocalDateTime.now().plusMinutes(5);
-        UserSession session = new UserSession(sessionId, user.getId().intValue(), expirationTime);
-        userSessionDAO.save(session);
-        System.out.println("Token user session para el usuario "+ user.getId());
-        
+        String token = UUID.randomUUID().toString();
+
         System.out.println("Intento de login exitoso para el email " + email);
-        return "Login successful";
+        return new LoginResponse(token, user.getId(), user.getEmail());
+    }
+
+    public void saveSession(String token, Long userId, String email) {
+        if (token == null || token.isBlank() || userId == null || email == null || email.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Datos de sesion incompletos");
+        }
+
+        Optional<User> optionalUser = userDAO.findById(userId);
+        if (optionalUser.isEmpty() || !optionalUser.get().getEmail().equalsIgnoreCase(email)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Sesion no valida para el usuario");
+        }
+
+        LocalDateTime expiresAt = LocalDateTime.now().plusMinutes(30);
+        UserSession session = new UserSession(token, userId, email, expiresAt);
+        userSessionDAO.save(session);
     }
 
 }

@@ -6,5 +6,5 @@ import org.springframework.stereotype.Repository;
 import edu.esi.ds.esiusuarios.model.UserSession;
 
 @Repository
-public interface UserSessionDAO extends JpaRepository<UserSession, String> {
+public interface UserSessionDAO extends JpaRepository<UserSession, Long> {
 }

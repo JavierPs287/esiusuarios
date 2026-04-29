@@ -12,8 +12,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
-import jakarta.servlet.http.HttpServletRequest;
 
+import edu.esi.ds.esiusuarios.http.dto.LoginResponse;
+import edu.esi.ds.esiusuarios.http.dto.SaveSessionRequest;
 import edu.esi.ds.esiusuarios.services.UserService;
 
 @RestController
@@ -51,7 +52,7 @@ public class UserController {
     }
 
     @PostMapping("/login")
-    public String login(@RequestBody Map<String, String> credentials, HttpServletRequest request) {
+    public LoginResponse login(@RequestBody Map<String, String> credentials) {
         JSONObject json = new JSONObject(credentials);
         String email = json.optString("email");
         String pwd = json.optString("pwd");
@@ -61,9 +62,17 @@ public class UserController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error en el inicio de sesión");
         }
 
-        String sessionId = request.getSession().getId();
-        String result = this.service.login(email, pwd, sessionId);
-        return result;
+        return this.service.login(email, pwd);
+    }
+
+    @PostMapping("/savesession")
+    public String saveSession(@RequestBody SaveSessionRequest request) {
+        if (request == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Body vacio");
+        }
+
+        this.service.saveSession(request.token(), request.userId(), request.email());
+        return "Session saved";
     }
 
 }
