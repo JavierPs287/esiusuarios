@@ -8,4 +8,5 @@ import edu.esi.ds.esiusuarios.model.UserSession;
 @Repository
 public interface UserSessionDAO extends JpaRepository<UserSession, Long> {
     void deleteByUserId(Long userId);
+    void deleteByTokenAndUserIdAndEmail(String token, Long userId, String email);
 }

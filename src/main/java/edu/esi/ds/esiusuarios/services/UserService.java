@@ -101,6 +101,20 @@ public class UserService {
     }
 
     @Transactional
+    public void logout(String token, Long userId, String email) {
+        if (token == null || token.isBlank() || userId == null || email == null || email.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Datos de logout incompletos");
+        }
+
+        Optional<User> optionalUser = userDAO.findById(userId);
+        if (optionalUser.isEmpty() || !optionalUser.get().getEmail().equalsIgnoreCase(email.trim())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Sesion no valida para el usuario");
+        }
+
+        userSessionDAO.deleteByTokenAndUserIdAndEmail(token, userId, email);
+    }
+
+    @Transactional
     public void cancelarCuenta(Long userId, String email) {
         if (userId == null || email == null || email.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Datos de cancelacion incompletos");

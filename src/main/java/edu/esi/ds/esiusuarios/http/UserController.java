@@ -17,6 +17,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import edu.esi.ds.esiusuarios.http.dto.CancelarCuentaRequest;
 import edu.esi.ds.esiusuarios.http.dto.LoginResponse;
+import edu.esi.ds.esiusuarios.http.dto.LogoutRequest;
 import edu.esi.ds.esiusuarios.http.dto.SaveSessionRequest;
 import edu.esi.ds.esiusuarios.services.UserService;
 
@@ -86,6 +87,16 @@ public class UserController {
         }
 
         this.service.cancelarCuenta(request.userId(), request.email());
+    }
+
+    @DeleteMapping("/logout")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void logout(@RequestBody LogoutRequest request) {
+        if (request == null || request.token() == null || request.token().isBlank() || request.userId() == null || request.email() == null || request.email().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Datos de logout incompletos");
+        }
+
+        this.service.logout(request.token(), request.userId(), request.email());
     }
 
 }
