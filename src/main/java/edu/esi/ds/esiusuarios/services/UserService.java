@@ -7,6 +7,7 @@ import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
@@ -97,6 +98,21 @@ public class UserService {
         LocalDateTime expiresAt = LocalDateTime.now().plusMinutes(30);
         UserSession session = new UserSession(token, userId, email, expiresAt);
         userSessionDAO.save(session);
+    }
+
+    @Transactional
+    public void cancelarCuenta(Long userId, String email) {
+        if (userId == null || email == null || email.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Datos de cancelacion incompletos");
+        }
+
+        Optional<User> optionalUser = userDAO.findById(userId);
+        if (optionalUser.isEmpty() || !optionalUser.get().getEmail().equalsIgnoreCase(email.trim())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Sesion no valida para el usuario");
+        }
+
+        userSessionDAO.deleteByUserId(userId);
+        userDAO.deleteById(userId);
     }
 
 }

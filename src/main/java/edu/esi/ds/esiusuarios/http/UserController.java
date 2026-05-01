@@ -7,12 +7,15 @@ import java.util.Map;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+import edu.esi.ds.esiusuarios.http.dto.CancelarCuentaRequest;
 import edu.esi.ds.esiusuarios.http.dto.LoginResponse;
 import edu.esi.ds.esiusuarios.http.dto.SaveSessionRequest;
 import edu.esi.ds.esiusuarios.services.UserService;
@@ -73,6 +76,16 @@ public class UserController {
 
         this.service.saveSession(request.token(), request.userId(), request.email());
         return "Session saved";
+    }
+
+    @DeleteMapping("/cancelar-cuenta")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void cancelarCuenta(@RequestBody CancelarCuentaRequest request) {
+        if (request == null || request.userId() == null || request.email() == null || request.email().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Datos de cancelacion incompletos");
+        }
+
+        this.service.cancelarCuenta(request.userId(), request.email());
     }
 
 }
