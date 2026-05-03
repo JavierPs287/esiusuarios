@@ -8,6 +8,7 @@ import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -97,6 +98,31 @@ public class UserController {
         }
 
         this.service.logout(request.token(), request.userId(), request.email());
+    }
+
+    @PostMapping("/recuperar-password")
+    public void requestPasswordReset(@RequestBody Map<String, String> request) {
+        String email = request.get("email");
+        if (email == null || email.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El email es obligatorio");
+        }
+        this.service.requestPasswordReset(email);
+    }
+
+    @PostMapping("/reset-password/{token}")
+    public void resetPassword(@PathVariable String token, @RequestBody Map<String, String> request) {
+        String pwd1 = request.get("pwd1");
+        String pwd2 = request.get("pwd2");
+
+        if (pwd1 == null || pwd1.isBlank() || pwd2 == null || pwd2.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Faltan campos obligatorios");
+        }
+
+        if (!pwd1.equals(pwd2)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Las contraseñas no coinciden");
+        }
+
+        this.service.resetPassword(token, pwd1);
     }
 
 }

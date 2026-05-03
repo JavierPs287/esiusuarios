@@ -27,6 +27,12 @@ public class User {
     @Column(length = 256, nullable = false, unique = true)
     private String email;
 
+    @Column(length = 256)
+    private String resetToken;
+
+    @Column
+    private java.time.LocalDateTime resetTokenExpiry;
+
     public User() {
     }
 
@@ -75,6 +81,22 @@ public class User {
 
     public String getEmail() {
         return email;
+    }
+
+    public String getResetToken() {
+        return resetToken;
+    }
+
+    public void setResetToken(String resetToken) {
+        this.resetToken = resetToken;
+    }
+
+    public java.time.LocalDateTime getResetTokenExpiry() {
+        return resetTokenExpiry;
+    }
+
+    public void setResetTokenExpiry(java.time.LocalDateTime resetTokenExpiry) {
+        this.resetTokenExpiry = resetTokenExpiry;
     }
 
 }

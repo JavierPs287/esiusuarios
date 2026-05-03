@@ -113,4 +113,51 @@ public class GmailEmailService {
 
         sendHtmlEmail(to, subject, htmlContent);
     }
+
+    public void sendRecoveryEmail(String to, String nombre, String resetLink) throws MessagingException {
+        String subject = "Recuperar contraseña ESIUsuarios";
+        String nombreApp = "ESI-ENTRADAS";
+
+        String htmlContent = """
+                <html>
+                    <body style="margin:0; padding:0; background-color:#d8cfbd; font-family: Arial, sans-serif;">
+                        <div style="background-color:#1f2a3a; padding:15px; text-align:center;">
+                            <h1 style="color:#ffffff; margin:0; font-size:20px;">
+                                %s
+                            </h1>
+                        </div>
+                        <div style="padding:40px 20px; text-align:center;">
+                            <h2 style="color:#000; font-size:28px; margin-bottom:10px;">
+                                Hola, %s
+                            </h2>
+                            <p style="color:#333; font-size:16px;">
+                                Has solicitado recuperar tu contraseña.
+                            </p>
+                            <p style="color:#333; font-size:16px; margin-bottom:30px;">
+                                Haz clic en el siguiente botón para establecer una nueva contraseña. Este enlace caducará en 30 minutos.
+                            </p>
+                            <a href="%s"
+                               style="
+                                    display:inline-block;
+                                    padding:14px 28px;
+                                    font-size:16px;
+                                    font-weight:bold;
+                                    color:#000;
+                                    text-decoration:none;
+                                    border-radius:30px;
+                                    background: linear-gradient(90deg, #ff6a2b, #f7a53b);
+                                    box-shadow: 0px 4px 10px rgba(0,0,0,0.2);
+                               ">
+                               Recuperar contraseña
+                            </a>
+                        </div>
+                        <div style="text-align:center; padding:20px; font-size:12px; color:#555;">
+                            © %s - Todos los derechos reservados
+                        </div>
+                    </body>
+                </html>
+                """.formatted(nombreApp, nombre, resetLink, nombreApp);
+
+        sendHtmlEmail(to, subject, htmlContent);
+    }
 }

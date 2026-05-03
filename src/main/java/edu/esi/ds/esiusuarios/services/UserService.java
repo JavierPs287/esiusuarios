@@ -129,4 +129,36 @@ public class UserService {
         userDAO.deleteById(userId);
     }
 
+    public void requestPasswordReset(String email) {
+        Optional<User> optionalUser = userDAO.findByEmail(email);
+        if (optionalUser.isPresent()) {
+            User user = optionalUser.get();
+            String resetToken = UUID.randomUUID().toString();
+            user.setResetToken(resetToken);
+            user.setResetTokenExpiry(LocalDateTime.now().plusMinutes(30));
+            userDAO.save(user);
+
+            try {
+                String resetLink = "http://localhost:4200/recuperar-password/" + resetToken;
+                gmailEmailService.sendRecoveryEmail(user.getEmail(), user.getNombre(), resetLink);
+            } catch (MessagingException e) {
+                System.err.println("Error sending recovery email: " + e.getMessage());
+            }
+        }
+    }
+
+    public void resetPassword(String token, String newPassword) {
+        validatorService.validatePassword(newPassword);
+
+        Optional<User> optionalUser = userDAO.findByResetToken(token);
+        if (optionalUser.isEmpty() || optionalUser.get().getResetTokenExpiry().isBefore(LocalDateTime.now())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Token inválido o expirado");
+        }
+
+        User user = optionalUser.get();
+        user.setContraseña(encoder.encode(newPassword));
+        user.setResetToken(null);
+        user.setResetTokenExpiry(null);
+        userDAO.save(user);
+    }
 }
