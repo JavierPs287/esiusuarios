@@ -1,4 +1,4 @@
-package edu.esi.ds.esiusuarios.http.dto;
+package edu.esi.ds.esiusuarios.dto;
 
 public record CancelarCuentaRequest(Long userId, String email) {
 }

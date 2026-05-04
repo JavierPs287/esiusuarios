@@ -14,7 +14,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import jakarta.mail.MessagingException;
 import edu.esi.ds.esiusuarios.dao.UserDAO;
 import edu.esi.ds.esiusuarios.dao.UserSessionDAO;
-import edu.esi.ds.esiusuarios.http.dto.LoginResponse;
+import edu.esi.ds.esiusuarios.dto.LoginResponse;
 import edu.esi.ds.esiusuarios.model.User;
 import edu.esi.ds.esiusuarios.model.UserSession;
 
@@ -114,6 +114,14 @@ public class UserService {
         }
 
         userSessionDAO.deleteByTokenAndUserIdAndEmail(token, userId, email);
+    }
+
+    public String checkToken(String token) {
+        Optional<UserSession> sessionOpt = userSessionDAO.findByToken(token);
+        if(sessionOpt.isEmpty() || sessionOpt.get().getExpiresAt().isBefore(LocalDateTime.now())) {
+            return null;
+        }
+        return sessionOpt.get().getEmail();
     }
 
     @Transactional

@@ -17,17 +17,16 @@ public class ExternalController {
     @Autowired
     private UserService service;
 
-    //TODO Aqui iria el endpoint para verificar la sesión
-
-    // @GetMapping("/checktoken/{token}")
-    // public String checkToken(@PathVariable String token) {
-    //     if(token == null || token.isEmpty()) {
-    //         throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Se necesita token");
-    //     }
-    //     String username = this.service.checkToken(token);
-    //     if (username == null) {
-    //         throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Token no válido");
-    //     }
-    //     return username;
-    // }
+    // Endpoint para verificar la sesión
+    @GetMapping("/checktoken/{token}")
+    public String checkToken(@PathVariable String token) {
+        if(token == null || token.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Se necesita token");
+        }
+        String username = this.service.checkToken(token);
+        if (username == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Token no válido");
+        }
+        return username;
+    }
 }

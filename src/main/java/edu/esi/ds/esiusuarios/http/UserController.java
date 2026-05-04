@@ -16,10 +16,10 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
-import edu.esi.ds.esiusuarios.http.dto.CancelarCuentaRequest;
-import edu.esi.ds.esiusuarios.http.dto.LoginResponse;
-import edu.esi.ds.esiusuarios.http.dto.LogoutRequest;
-import edu.esi.ds.esiusuarios.http.dto.SaveSessionRequest;
+import edu.esi.ds.esiusuarios.dto.CancelarCuentaRequest;
+import edu.esi.ds.esiusuarios.dto.LoginResponse;
+import edu.esi.ds.esiusuarios.dto.LogoutRequest;
+import edu.esi.ds.esiusuarios.dto.SaveSessionRequest;
 import edu.esi.ds.esiusuarios.services.UserService;
 
 @RestController
