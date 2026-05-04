@@ -131,10 +131,18 @@ public class UserService {
         userDAO.deleteById(userId);
     }
 
+    @Transactional
     public void requestPasswordReset(String email) {
         Optional<User> optionalUser = userDAO.findByEmail(email);
         if (optionalUser.isPresent()) {
             User user = optionalUser.get();
+            
+            // Si ya hay un token y no ha caducado, no envíamos otro correo
+            if (user.getResetToken() != null && user.getResetTokenExpiry() != null 
+                && user.getResetTokenExpiry().isAfter(LocalDateTime.now())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Ya se ha enviado un correo de recuperación que todavía es válido.");
+            }
+
             String resetToken = UUID.randomUUID().toString();
             user.setResetToken(resetToken);
             user.setResetTokenExpiry(LocalDateTime.now().plusMinutes(30));
@@ -146,6 +154,8 @@ public class UserService {
             } catch (MessagingException e) {
                 System.err.println("Error sending recovery email: " + e.getMessage());
             }
+        } else {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado");
         }
     }
 
