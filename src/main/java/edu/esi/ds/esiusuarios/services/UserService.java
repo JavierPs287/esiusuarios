@@ -81,6 +81,8 @@ public class UserService {
         User user = optionalUser.get();
         String token = UUID.randomUUID().toString();
 
+        saveSession(token, user.getId(), user.getEmail());
+
         System.out.println("Intento de login exitoso para el email " + email);
         return new LoginResponse(token, user.getId(), user.getEmail());
     }
