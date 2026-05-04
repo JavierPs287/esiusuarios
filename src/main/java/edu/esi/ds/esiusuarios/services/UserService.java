@@ -147,6 +147,7 @@ public class UserService {
         }
     }
 
+    @Transactional
     public void resetPassword(String token, String newPassword) {
         validatorService.validatePassword(newPassword);
 
@@ -160,5 +161,27 @@ public class UserService {
         user.setResetToken(null);
         user.setResetTokenExpiry(null);
         userDAO.save(user);
+    }
+    
+    @Transactional
+    public void deleteExpiredTokens() {
+    	userSessionDAO.deleteByExpiresAtBefore(LocalDateTime.now());
+    }
+    
+    @Transactional
+    public boolean isTokenValid(String token) {
+        deleteExpiredTokens();
+        
+        Optional<UserSession> session = userSessionDAO.findByToken(token);
+        if (session.isEmpty()) {
+            return false;
+        }
+        
+        if (session.get().getExpiresAt().isBefore(LocalDateTime.now())) {
+            userSessionDAO.delete(session.get());
+            return false;
+        }
+        
+        return true;
     }
 }

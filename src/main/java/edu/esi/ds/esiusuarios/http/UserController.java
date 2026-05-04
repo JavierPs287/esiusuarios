@@ -124,5 +124,18 @@ public class UserController {
 
         this.service.resetPassword(token, pwd1);
     }
+    
+    @PostMapping("/validate-token")
+    public void validateToken(@RequestBody Map<String, String> request) {
+        String token = request.get("token");
+        if (token == null || token.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El token es obligatorio");
+        }
+        
+        boolean isValid = this.service.isTokenValid(token);
+        if (!isValid) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Token inválido o expirado");
+        }
+    }
 
 }
