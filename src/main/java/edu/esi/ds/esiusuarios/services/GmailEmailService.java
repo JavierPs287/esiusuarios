@@ -14,8 +14,13 @@ import jakarta.mail.Transport;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @Service
 public class GmailEmailService {
+
+    private static final Logger logger = LoggerFactory.getLogger(GmailEmailService.class);
 
     private final String username;
     private final String appPassword;
@@ -52,8 +57,15 @@ public class GmailEmailService {
         message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(to));
         message.setSubject(subject, "UTF-8");
         message.setContent(htmlContent, "text/html; charset=UTF-8");
+        logger.info("Enviando email a {} con asunto '{}'", to, subject);
 
-        Transport.send(message);
+        try {
+            Transport.send(message);
+        } catch (MessagingException e) {
+            logger.error("Error al enviar email a {}: {}", to, e.getMessage());
+            throw e;
+        }
+        logger.info("Email enviado correctamente a {}", to);
     }
 
     public void sendWelcomeEmail(String to, String nombre) throws MessagingException {
@@ -110,6 +122,7 @@ public class GmailEmailService {
                     </body>
                 </html>
                 """.formatted(nombreApp, nombre, urlLogin, nombreApp);
+        logger.info("Preparando email de bienvenida para {}", to);
 
         sendHtmlEmail(to, subject, htmlContent);
     }
@@ -157,6 +170,7 @@ public class GmailEmailService {
                     </body>
                 </html>
                 """.formatted(nombreApp, nombre, resetLink, nombreApp);
+        logger.info("Preparando email de recuperación de contraseña para {}", to);
 
         sendHtmlEmail(to, subject, htmlContent);
     }
