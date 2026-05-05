@@ -70,12 +70,12 @@ public class UserService {
         
         if (optionalUser.isEmpty()) {
             System.err.println("Intento de login fallido: Usuario no encontrado para el email " + email);
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Credenciales incorrectas o ha ocurrido un error");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error en el inicio de sesión");
         }
         
         if (!encoder.matches(contraseña, optionalUser.get().getContraseña())) {
             System.err.println("Intento de login fallido: Contraseña incorrecta para el email " + email);
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Credenciales incorrectas o ha ocurrido un error");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error en el inicio de sesión");
         }
         
         User user = optionalUser.get();
@@ -89,12 +89,12 @@ public class UserService {
 
     public void saveSession(String token, Long userId, String email) {
         if (token == null || token.isBlank() || userId == null || email == null || email.isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Datos de sesion incompletos");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error en la obtención del token");
         }
 
         Optional<User> optionalUser = userDAO.findById(userId);
         if (optionalUser.isEmpty() || !optionalUser.get().getEmail().equalsIgnoreCase(email)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Sesion no valida para el usuario");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error en la obtención del token");
         }
 
         LocalDateTime expiresAt = LocalDateTime.now().plusMinutes(30);
@@ -105,12 +105,12 @@ public class UserService {
     @Transactional
     public void logout(String token, Long userId, String email) {
         if (token == null || token.isBlank() || userId == null || email == null || email.isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Datos de logout incompletos");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error en el logout");
         }
 
         Optional<User> optionalUser = userDAO.findById(userId);
         if (optionalUser.isEmpty() || !optionalUser.get().getEmail().equalsIgnoreCase(email.trim())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Sesion no valida para el usuario");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error en el logout");
         }
 
         userSessionDAO.deleteByTokenAndUserIdAndEmail(token, userId, email);
@@ -135,12 +135,12 @@ public class UserService {
     @Transactional
     public void cancelarCuenta(Long userId, String email) {
         if (userId == null || email == null || email.isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Datos de cancelacion incompletos");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error en la cancelación de cuenta");
         }
 
         Optional<User> optionalUser = userDAO.findById(userId);
         if (optionalUser.isEmpty() || !optionalUser.get().getEmail().equalsIgnoreCase(email.trim())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Sesion no valida para el usuario");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error en la cancelación de cuenta");
         }
 
         userSessionDAO.deleteByUserId(userId);
