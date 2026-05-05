@@ -124,6 +124,14 @@ public class UserService {
         return sessionOpt.get().getEmail();
     }
 
+    public UserSession getValidSession(String token) {
+        Optional<UserSession> sessionOpt = userSessionDAO.findByToken(token);
+        if (sessionOpt.isEmpty() || sessionOpt.get().getExpiresAt().isBefore(LocalDateTime.now())) {
+            return null;
+        }
+        return sessionOpt.get();
+    }
+
     @Transactional
     public void cancelarCuenta(Long userId, String email) {
         if (userId == null || email == null || email.isBlank()) {

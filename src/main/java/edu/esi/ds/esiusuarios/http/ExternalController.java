@@ -8,6 +8,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+import edu.esi.ds.esiusuarios.dto.ExternalSessionResponse;
+import edu.esi.ds.esiusuarios.model.UserSession;
 import edu.esi.ds.esiusuarios.services.UserService;
 
 @RestController
@@ -28,5 +30,19 @@ public class ExternalController {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Token no válido");
         }
         return username;
+    }
+
+    @GetMapping("/session/{token}")
+    public ExternalSessionResponse getSession(@PathVariable String token) {
+        if (token == null || token.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Se necesita token");
+        }
+
+        UserSession session = this.service.getValidSession(token);
+        if (session == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Token no valido");
+        }
+
+        return new ExternalSessionResponse(session.getUserId(), session.getEmail());
     }
 }
