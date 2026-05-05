@@ -1,9 +1,11 @@
 package edu.esi.ds.esiusuarios.services;
 
+import java.util.Map;
 import java.util.Optional;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -14,7 +16,10 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import jakarta.mail.MessagingException;
 import edu.esi.ds.esiusuarios.dao.UserDAO;
 import edu.esi.ds.esiusuarios.dao.UserSessionDAO;
+import edu.esi.ds.esiusuarios.dto.CancelarCuentaRequest;
 import edu.esi.ds.esiusuarios.dto.LoginResponse;
+import edu.esi.ds.esiusuarios.dto.LogoutRequest;
+import edu.esi.ds.esiusuarios.dto.SaveSessionRequest;
 import edu.esi.ds.esiusuarios.model.User;
 import edu.esi.ds.esiusuarios.model.UserSession;
 
@@ -38,18 +43,35 @@ public class UserService {
     public UserService() {
     }
 
-    public String registrar(String nombre, String apellidos, String email, String contraseña) {
+    public String registrar(Map<String, String> credentials) {
+        JSONObject json = new JSONObject(credentials);
+        String nombre = json.optString("nombre");
+        String apellidos = json.optString("apellidos");
+        String email = json.optString("email");
+        String pwd1 = json.optString("pwd1");
+        String pwd2 = json.optString("pwd2");
+  
+        if (nombre.isEmpty() || apellidos.isEmpty() || email.isEmpty() || pwd1.isEmpty() || pwd2.isEmpty()) {
+            System.err.println("Intento de registro fallido: Faltan credenciales.");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Faltan campos obligatorios");
+        }
+
+        if (!pwd1.equals(pwd2)) {
+            System.err.println("Intento de registro fallido: Las contraseñas no coinciden para " + email);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Las contraseñas no coinciden");
+        }
+
         validatorService.validateNombre(nombre);
         validatorService.validateApellidos(apellidos);
         validatorService.validateEmail(email);
-        validatorService.validatePassword(contraseña);
+        validatorService.validatePassword(pwd1);
 
         if (userDAO.findByEmail(email).isPresent()) {
             System.err.println("Intento de registro fallido: El email ya está registrado - " + email);
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Error en el registro");
         }
         
-        String encodedPassword = encoder.encode(contraseña);
+        String encodedPassword = encoder.encode(pwd1);
 
         User newUser = new User(nombre, apellidos, email, encodedPassword);
         userDAO.save(newUser);
@@ -62,10 +84,25 @@ public class UserService {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "No se ha podido enviar el email de bienvenida", e);
         }
 
-        return String.valueOf(newUser.getId());
+        String result = String.valueOf(newUser.getId());
+        if (result == null) {
+            System.err.println("Intento de registro fallido: Fallo desconocido para " + email);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error en el registro");
+        }
+        return result;
     }
 
-    public LoginResponse login(String email, String contraseña) {
+    public LoginResponse login(Map<String, String> credentials) {
+
+        JSONObject json = new JSONObject(credentials);
+        String email = json.optString("email");
+        String pwd = json.optString("pwd");
+
+        if (email.isEmpty() || pwd.isEmpty()) {
+            System.err.println("Intento de login fallido: Faltan credenciales.");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error en el inicio de sesión");
+        }
+
         Optional<User> optionalUser = userDAO.findByEmail(email);
         
         if (optionalUser.isEmpty()) {
@@ -73,7 +110,7 @@ public class UserService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error en el inicio de sesión");
         }
         
-        if (!encoder.matches(contraseña, optionalUser.get().getContraseña())) {
+        if (!encoder.matches(pwd, optionalUser.get().getContraseña())) {
             System.err.println("Intento de login fallido: Contraseña incorrecta para el email " + email);
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error en el inicio de sesión");
         }
@@ -81,13 +118,20 @@ public class UserService {
         User user = optionalUser.get();
         String token = UUID.randomUUID().toString();
 
-        saveSession(token, user.getId(), user.getEmail());
+        saveSession(new SaveSessionRequest(token, user.getId(), user.getEmail()));
 
         System.out.println("Intento de login exitoso para el email " + email);
         return new LoginResponse(token, user.getId(), user.getEmail());
     }
 
-    public void saveSession(String token, Long userId, String email) {
+    public void saveSession(SaveSessionRequest request) {
+        if (request == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Body vacio");
+        }
+        String token = request.token();
+        Long userId = request.userId();
+        String email = request.email();
+
         if (token == null || token.isBlank() || userId == null || email == null || email.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error en la obtención del token");
         }
@@ -103,10 +147,15 @@ public class UserService {
     }
 
     @Transactional
-    public void logout(String token, Long userId, String email) {
-        if (token == null || token.isBlank() || userId == null || email == null || email.isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error en el logout");
+    public void logout(LogoutRequest request) {
+
+        if (request == null || request.token() == null || request.token().isBlank() || request.userId() == null || request.email() == null || request.email().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Datos de logout incompletos");
         }
+
+        String token = request.token();
+        Long userId = request.userId();
+        String email = request.email();
 
         Optional<User> optionalUser = userDAO.findById(userId);
         if (optionalUser.isEmpty() || !optionalUser.get().getEmail().equalsIgnoreCase(email.trim())) {
@@ -133,10 +182,13 @@ public class UserService {
     }
 
     @Transactional
-    public void cancelarCuenta(Long userId, String email) {
-        if (userId == null || email == null || email.isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error en la cancelación de cuenta");
+    public void cancelarCuenta(CancelarCuentaRequest request) {
+
+        if (request == null || request.userId() == null || request.email() == null || request.email().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Datos de cancelacion incompletos");
         }
+        Long userId = request.userId();
+        String email = request.email();
 
         Optional<User> optionalUser = userDAO.findById(userId);
         if (optionalUser.isEmpty() || !optionalUser.get().getEmail().equalsIgnoreCase(email.trim())) {
@@ -148,7 +200,13 @@ public class UserService {
     }
 
     @Transactional
-    public void requestPasswordReset(String email) {
+    public void requestPasswordReset(Map<String, String> request) {
+
+        String email = request.get("email");
+        if (email == null || email.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El email es obligatorio");
+        }
+
         Optional<User> optionalUser = userDAO.findByEmail(email);
         if (optionalUser.isPresent()) {
             User user = optionalUser.get();
@@ -176,8 +234,20 @@ public class UserService {
     }
 
     @Transactional
-    public void resetPassword(String token, String newPassword) {
-        validatorService.validatePassword(newPassword);
+    public void resetPassword(String token, Map<String, String> request) {
+
+        String pwd1 = request.get("pwd1");
+        String pwd2 = request.get("pwd2");
+
+        if (pwd1 == null || pwd1.isBlank() || pwd2 == null || pwd2.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Faltan campos obligatorios");
+        }
+
+        if (!pwd1.equals(pwd2)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Las contraseñas no coinciden");
+        }
+
+        validatorService.validatePassword(pwd1);
 
         Optional<User> optionalUser = userDAO.findByResetToken(token);
         if (optionalUser.isEmpty() || optionalUser.get().getResetTokenExpiry().isBefore(LocalDateTime.now())) {
@@ -185,7 +255,7 @@ public class UserService {
         }
 
         User user = optionalUser.get();
-        user.setContraseña(encoder.encode(newPassword));
+        user.setContraseña(encoder.encode(pwd1));
         user.setResetToken(null);
         user.setResetTokenExpiry(null);
         userDAO.save(user);
@@ -197,19 +267,28 @@ public class UserService {
     }
     
     @Transactional
-    public boolean isTokenValid(String token) {
+    public void isTokenValid(Map<String, String> request) {
+
+        String token = request.get("token");
+        boolean isValid = true;
+        if (token == null || token.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El token es obligatorio");
+        }
+        
         deleteExpiredTokens();
         
         Optional<UserSession> session = userSessionDAO.findByToken(token);
         if (session.isEmpty()) {
-            return false;
+            isValid = false;
         }
         
         if (session.get().getExpiresAt().isBefore(LocalDateTime.now())) {
             userSessionDAO.delete(session.get());
-            return false;
+            isValid = false;
         }
-        
-        return true;
+
+        if (!isValid) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Token inválido o expirado");
+        }
     }
 }
