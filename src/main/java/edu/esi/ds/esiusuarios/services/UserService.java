@@ -146,16 +146,24 @@ public class UserService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error en la obtención del token");
         }
 
+        validateTokenFormat(token);
+
         Optional<User> optionalUser = userDAO.findById(userId);
-        if (optionalUser.isEmpty() || !optionalUser.get().getEmail().equalsIgnoreCase(email)) {
+        if (optionalUser.isEmpty() || !optionalUser.get().getEmail().equalsIgnoreCase(email.trim())) {
             logger.error("Intento de guardar sesión fallido: Usuario no encontrado para el email {}", email);
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error en la obtención del token");
         }
 
+        if (userSessionDAO.findByToken(token).isPresent()) {
+            logger.error("Intento de guardar sesión fallido: El token ya existe para el email {}", email);
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Error en la obtención del token");
+        }
+
+        userSessionDAO.deleteByUserId(userId);
         LocalDateTime expiresAt = LocalDateTime.now().plusMinutes(30);
         UserSession session = new UserSession(token, userId, email, expiresAt);
         userSessionDAO.save(session);
-        logger.info("Sesión guardada exitosamente para el email {}. Token: {}", email, token);
+        logger.info("Sesión guardada exitosamente para el email {}. Mandando token", email);
     }
 
     @Transactional
@@ -170,13 +178,15 @@ public class UserService {
         Long userId = request.userId();
         String email = request.email();
 
+        UserSession session = validateSessionOwnership(token, userId, email);
+
         Optional<User> optionalUser = userDAO.findById(userId);
         if (optionalUser.isEmpty() || !optionalUser.get().getEmail().equalsIgnoreCase(email.trim())) {
             logger.error("Intento de logout fallido: Usuario no encontrado para el email {}", email);
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error en el logout");
         }
 
-        userSessionDAO.deleteByTokenAndUserIdAndEmail(token, userId, email);
+        userSessionDAO.deleteByTokenAndUserIdAndEmail(session.getToken(), session.getUserId(), session.getEmail());
         logger.info("Logout exitoso para el email {}.", email);
     }
 
@@ -231,12 +241,15 @@ public class UserService {
     @Transactional
     public void cancelarCuenta(CancelarCuentaRequest request) {
 
-        if (request == null || request.userId() == null || request.email() == null || request.email().isBlank()) {
+        if (request == null || request.token() == null || request.token().isBlank() || request.userId() == null || request.email() == null || request.email().isBlank()) {
             logger.error("Intento de cancelación de cuenta fallido: Datos de cancelación incompletos.");
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Datos de cancelacion incompletos");
         }
+        String token = request.token();
         Long userId = request.userId();
         String email = request.email();
+
+        UserSession session = validateSessionOwnership(token, userId, email);
 
         Optional<User> optionalUser = userDAO.findById(userId);
         if (optionalUser.isEmpty() || !optionalUser.get().getEmail().equalsIgnoreCase(email.trim())) {
@@ -245,6 +258,7 @@ public class UserService {
         }
 
         logger.info("Cancelación/Borrado de cuenta iniciada para el email {}.", email);
+        userSessionDAO.deleteByTokenAndUserIdAndEmail(session.getToken(), session.getUserId(), session.getEmail());
         userSessionDAO.deleteByUserId(userId);
         userDAO.deleteById(userId);
         logger.info("Cuenta cancelada/borrada exitosamente para el email {}.", email);
@@ -274,7 +288,7 @@ public class UserService {
             user.setResetToken(resetToken);
             user.setResetTokenExpiry(LocalDateTime.now().plusMinutes(10));
             userDAO.save(user);
-            logger.info("Token de restablecimiento de contraseña generado para el email {}. Token: {}", email, resetToken);
+            logger.info("Token de restablecimiento de contraseña generado para el email {}. Mandando almacenando token", email);
 
             try {
                 String resetLink = "http://localhost:4200/recuperar-password/" + resetToken;
@@ -342,9 +356,7 @@ public class UserService {
         if (session.isEmpty()) {
             logger.error("Intento de validación de token fallido: Token no encontrado.");
             isValid = false;
-        }
-        
-        if (session.get().getExpiresAt().isBefore(LocalDateTime.now())) {
+        } else if (session.get().getExpiresAt().isBefore(LocalDateTime.now())) {
             userSessionDAO.delete(session.get());
             logger.error("Intento de validación de token fallido: Token expirado.");
             isValid = false;
@@ -353,5 +365,38 @@ public class UserService {
         if (!isValid) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Token inválido o expirado");
         }
+    }
+
+    private void validateTokenFormat(String token) {
+        try {
+            UUID.fromString(token);
+        } catch (IllegalArgumentException ex) {
+            logger.error("Formato de token inválido");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error en la obtención del token");
+        }
+    }
+
+    private UserSession validateSessionOwnership(String token, Long userId, String email) {
+        validateTokenFormat(token);
+
+        Optional<UserSession> sessionOpt = userSessionDAO.findByToken(token);
+        if (sessionOpt.isEmpty()) {
+            logger.error("Intento fallido: sesión no encontrada para el token proporcionado");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Token inválido o expirado");
+        }
+
+        UserSession session = sessionOpt.get();
+        if (!userId.equals(session.getUserId()) || !session.getEmail().equalsIgnoreCase(email.trim())) {
+            logger.error("Intento fallido: el token no pertenece al usuario {}", userId);
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No puedes operar sobre otra cuenta");
+        }
+
+        if (session.getExpiresAt().isBefore(LocalDateTime.now())) {
+            userSessionDAO.delete(session);
+            logger.error("Intento fallido: sesión caducada para el usuario {}", userId);
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Token inválido o expirado");
+        }
+
+        return session;
     }
 }
