@@ -17,6 +17,7 @@ import jakarta.mail.MessagingException;
 import edu.esi.ds.esiusuarios.dao.UserDAO;
 import edu.esi.ds.esiusuarios.dao.UserSessionDAO;
 import edu.esi.ds.esiusuarios.dto.CancelarCuentaRequest;
+import edu.esi.ds.esiusuarios.dto.ExternalSessionResponse;
 import edu.esi.ds.esiusuarios.dto.LoginResponse;
 import edu.esi.ds.esiusuarios.dto.LogoutRequest;
 import edu.esi.ds.esiusuarios.dto.SaveSessionRequest;
@@ -166,19 +167,43 @@ public class UserService {
     }
 
     public String checkToken(String token) {
+
+        if(token == null || token.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Se necesita token");
+        }
+
         Optional<UserSession> sessionOpt = userSessionDAO.findByToken(token);
         if(sessionOpt.isEmpty() || sessionOpt.get().getExpiresAt().isBefore(LocalDateTime.now())) {
             return null;
         }
-        return sessionOpt.get().getEmail();
+
+        String username = sessionOpt.get().getEmail();
+        if (username == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Token no válido");
+        }
+
+        return username;
     }
 
-    public UserSession getValidSession(String token) {
+    public ExternalSessionResponse getValidSession(String token) {
+
+        if (token == null || token.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Se necesita token");
+        }
+
         Optional<UserSession> sessionOpt = userSessionDAO.findByToken(token);
         if (sessionOpt.isEmpty() || sessionOpt.get().getExpiresAt().isBefore(LocalDateTime.now())) {
             return null;
         }
-        return sessionOpt.get();
+        
+        UserSession session = sessionOpt.get();
+        if (session == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Token no valido");
+        }
+
+        ExternalSessionResponse response = new ExternalSessionResponse(session.getUserId(), session.getEmail());
+
+        return response;
     }
 
     @Transactional
