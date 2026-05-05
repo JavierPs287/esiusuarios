@@ -134,7 +134,7 @@ public class GmailEmailService {
                                 Has solicitado recuperar tu contraseña.
                             </p>
                             <p style="color:#333; font-size:16px; margin-bottom:30px;">
-                                Haz clic en el siguiente botón para establecer una nueva contraseña. Este enlace caducará en 30 minutos.
+                                Haz clic en el siguiente botón para establecer una nueva contraseña. Este enlace caducará en 10 minutos.
                             </p>
                             <a href="%s"
                                style="

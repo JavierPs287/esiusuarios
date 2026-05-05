@@ -161,7 +161,7 @@ public class UserService {
 
             String resetToken = UUID.randomUUID().toString();
             user.setResetToken(resetToken);
-            user.setResetTokenExpiry(LocalDateTime.now().plusMinutes(30));
+            user.setResetTokenExpiry(LocalDateTime.now().plusMinutes(10));
             userDAO.save(user);
 
             try {
