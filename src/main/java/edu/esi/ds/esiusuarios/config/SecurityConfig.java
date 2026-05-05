@@ -24,32 +24,12 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        CsrfTokenRequestAttributeHandler requestHandler = new CsrfTokenRequestAttributeHandler();
-        requestHandler.setCsrfRequestAttributeName("_csrf");
-
         http
             .cors(Customizer.withDefaults())
-            .csrf(csrf -> csrf
-                .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                .csrfTokenRequestHandler(requestHandler)
-                .ignoringRequestMatchers("/users/login", "/users/registrar", "/users/recuperar-password") // Permitir auth inicial
-            )
+            .csrf(csrf -> csrf.disable()) // Modificado: CSRF deshabilitado ya que allowCredentials es false
             .authorizeHttpRequests(auth -> auth
                 .anyRequest().permitAll()
             );
         return http.build();
-    }
-
-    // Filtro para forzar la vinculación de la Cookie del token CSRF
-    private static final class CsrfCookieFilter extends OncePerRequestFilter {
-        @Override
-        protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
-                throws ServletException, IOException {
-            CsrfToken csrfToken = (CsrfToken) request.getAttribute(CsrfToken.class.getName());
-            if (csrfToken != null) {
-                csrfToken.getToken(); // Fuerza que se genere el token y viaje la cookie
-            }
-            filterChain.doFilter(request, response);
-        }
     }
 }
