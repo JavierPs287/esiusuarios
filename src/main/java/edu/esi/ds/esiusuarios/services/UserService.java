@@ -46,6 +46,9 @@ public class UserService {
     @Autowired
     private GmailEmailService gmailEmailService;
 
+    @Autowired
+    private LoginAttemptService loginAttemptService;
+
     public UserService() {
     }
 
@@ -100,7 +103,9 @@ public class UserService {
         return result;
     }
 
-    public LoginResponse login(Map<String, String> credentials) {
+    public LoginResponse login(Map<String, String> credentials, String ipAddress) {
+
+        loginAttemptService.ensureLoginAllowed(ipAddress);
 
         JSONObject json = new JSONObject(credentials);
         String email = json.optString("email");
@@ -108,6 +113,7 @@ public class UserService {
 
         if (email.isEmpty() || pwd.isEmpty()) {
             logger.error("Intento de login fallido: Faltan credenciales.");
+            loginAttemptService.registerFailedLogin(ipAddress);
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error en el inicio de sesión");
         }
 
@@ -115,11 +121,13 @@ public class UserService {
         
         if (optionalUser.isEmpty()) {
             logger.error("Intento de login fallido: Usuario no encontrado para el email {}", email);
+            loginAttemptService.registerFailedLogin(ipAddress);
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error en el inicio de sesión");
         }
         
         if (!encoder.matches(pwd, optionalUser.get().getContraseña())) {
             logger.error("Intento de login fallido: Contraseña incorrecta para el email {}", email);
+            loginAttemptService.registerFailedLogin(ipAddress);
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Error en el inicio de sesión");
         }
         
@@ -127,6 +135,7 @@ public class UserService {
         String token = UUID.randomUUID().toString();
 
         saveSession(new SaveSessionRequest(token, user.getId(), user.getEmail()));
+        loginAttemptService.registerSuccessfulLogin(ipAddress);
 
         logger.info("Intento de login exitoso para el email {}", email);
         return new LoginResponse(token, user.getId(), user.getEmail());

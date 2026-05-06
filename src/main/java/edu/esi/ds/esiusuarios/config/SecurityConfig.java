@@ -24,6 +24,8 @@ public class SecurityConfig {
                     "/users/reset-password/**",
                     "/users/validate-token",
                     "/users/savesession",
+                    "/users/logout",
+                    "/users/cancelar-cuenta",
                     "/external/**"
                 ).permitAll()
                 .anyRequest().denyAll()

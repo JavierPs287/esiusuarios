@@ -3,6 +3,8 @@ package edu.esi.ds.esiusuarios.http;
 
 import java.util.Map;
 
+import jakarta.servlet.http.HttpServletRequest;
+
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -33,8 +35,8 @@ public class UserController {
     }
 
     @PostMapping("/login")
-    public LoginResponse login(@RequestBody Map<String, String> credentials) {
-        return this.service.login(credentials);
+    public LoginResponse login(@RequestBody Map<String, String> credentials, HttpServletRequest request) {
+        return this.service.login(credentials, request.getRemoteAddr());
     }
 
     @PostMapping("/savesession")
