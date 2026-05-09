@@ -26,7 +26,8 @@ public class SecurityConfig {
                     "/users/savesession",
                     "/users/logout",
                     "/users/cancelar-cuenta",
-                    "/external/**"
+                    "/external/**",
+                    "/error"
                 ).permitAll()
                 .anyRequest().denyAll()
             );
