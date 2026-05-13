@@ -1,19 +1,20 @@
 package edu.esi.ds.esiusuarios.services;
 
+import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Optional;
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
-import jakarta.mail.MessagingException;
 import edu.esi.ds.esiusuarios.dao.UserDAO;
 import edu.esi.ds.esiusuarios.dao.UserSessionDAO;
 import edu.esi.ds.esiusuarios.dto.CancelarCuentaRequest;
@@ -23,9 +24,7 @@ import edu.esi.ds.esiusuarios.dto.LogoutRequest;
 import edu.esi.ds.esiusuarios.dto.SaveSessionRequest;
 import edu.esi.ds.esiusuarios.model.User;
 import edu.esi.ds.esiusuarios.model.UserSession;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import jakarta.mail.MessagingException;
 
 @Service
 public class UserService {
@@ -279,7 +278,6 @@ public class UserService {
         String email = request.get("email");
         if (email == null || email.isBlank()) {
             logger.error("Intento de solicitud de restablecimiento de contraseña fallido: Email no proporcionado.");
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El email es obligatorio");
         }
 
         Optional<User> optionalUser = userDAO.findByEmail(email);
@@ -290,7 +288,6 @@ public class UserService {
             if (user.getResetToken() != null && user.getResetTokenExpiry() != null 
                 && user.getResetTokenExpiry().isAfter(LocalDateTime.now())) {
                 logger.error("Intento de solicitud de restablecimiento de contraseña fallido: Ya se ha enviado un correo de recuperación válido para el email {}", email);
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Ya se ha enviado un correo de recuperación que todavía es válido.");
             }
 
             String resetToken = UUID.randomUUID().toString();
@@ -307,7 +304,6 @@ public class UserService {
             }
         } else {
             logger.error("Intento de solicitud de restablecimiento de contraseña fallido: Usuario no encontrado para el email {}", email);
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado");
         }
     }
 
